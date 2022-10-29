@@ -1,8 +1,8 @@
 import { combineReducers } from 'redux';
-import container from './components/containers/reducer';
+import checkout from './modules/checkout/checkout.reducer';
 
-const rootReducer = combineReducers({ container });
+
+const rootReducer = combineReducers({ checkout });
 
 export type RootState = ReturnType<typeof rootReducer>;
-
 export default rootReducer;
