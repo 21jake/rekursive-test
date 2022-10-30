@@ -37,11 +37,11 @@ const columns = [
     // _props: { color: 'primary', className: 'fw-semibold' },
   },
 
-  { key: 'description', _style: { width: '40%' }, sorter: false },
+  // { key: 'description', _style: { width: '40%' }, sorter: false },
   { key: 'price', _style: { width: '10%' } },
   { key: 'amount', _style: { width: '5%' } },
   { key: 'total', _style: { width: '10%' } },
-  { key: 'action', _style: { width: '10%' }, sorter: false, filter: false },
+  { key: 'remove', _style: { width: '10%' }, sorter: false, filter: false },
 ];
 interface ICartData {
   size: Size | undefined;
@@ -135,7 +135,7 @@ const Checkout = () => {
   }, []);
 
   return (
-    <CContainer className={`border py-5`}>
+    <CContainer className={`py-5`}>
       <CustomerPrompt />
       <ConfirmationDialog visible={orderPlaced} />
 
@@ -159,7 +159,7 @@ const Checkout = () => {
         >
           {({ values, setFieldValue, submitForm }) => (
             <>
-              <CCol xs={5}>
+              <CCol xs={12} lg={6}>
                 <CCard>
                   <CCardHeader>
                     <p className={`m-0 text-lead`}>Your delicious pizzas are few clicks away!</p>
@@ -176,14 +176,15 @@ const Checkout = () => {
                         <CImage rounded thumbnail={true} className="d-block w-100" src={pizzaImg3} alt="slide 3" />
                       </CCarouselItem>
                     </CCarousel>
-                    <CRow className={`mt-3 justify-content-center`}>
+                    <CRow className={`mt-3 justify-content-between px-3`}>
                       {products
                         ? Object.keys(products).map((key, i) => {
                             const product = products[key as Size];
                             return (
                               <CCol
-                                xs={3}
-                                className={`border rounded text-center p-1 mx-3 border-${
+                                xs={4}
+                                sm={3}
+                                className={`border rounded text-center p-1  border-${
                                   values.chosenSize === key ? 'success' : 'secondary'
                                 }`}
                                 onClick={() => {
@@ -199,8 +200,13 @@ const Checkout = () => {
                           })
                         : ''}
                     </CRow>
-                    <CRow className={`mt-3 px-2 align-items-center justify-content-center`}>
-                      <CCol xs={6}>
+                    <CRow className={`mt-3 px-3`}>
+                      <CCol xs={12} sm={6}>
+                        <span className={`text-lead text-info`}>
+                          {products?.[values.chosenSize].description || ''}
+                        </span>
+                      </CCol>
+                      <CCol xs={12} sm={6} className={`d-flex justify-content-end mt-2 ${Boolean(itemsWithAppliedPolices) && 'd-none'}`}>
                         <CButton
                           size="sm"
                           variant="outline"
@@ -218,13 +224,12 @@ const Checkout = () => {
                         >
                           <CIcon icon={cilPlus} />
                         </CButton>
-                      </CCol>
-                      <CCol xs={6}>
+
                         <CButton
                           size="sm"
                           color="success"
-                          className={`float-end text-white`}
-                          disabled={Boolean(!values.amount) || Boolean(itemsWithAppliedPolices)}
+                          className={`float-end text-white ms-3`}
+                          disabled={Boolean(!values.amount)}
                           onClick={() => {
                             const { cartItems } = values;
                             const { chosenSize, amount } = values;
@@ -248,9 +253,10 @@ const Checkout = () => {
                 const cartData = convertCartItemsToCartTableData(values.cartItems, products);
                 const originalPrice = cartData.filter((e) => e.size).reduce((acc, item) => acc + item.total, 0);
                 return (
-                  <CCol xs={7}>
+                  <CCol xs={12} lg={6}>
                     <CSmartTable
-                      className="ahoy"
+                    
+                      
                       clickableRows
                       columns={columns}
                       columnFilter
@@ -267,7 +273,7 @@ const Checkout = () => {
                       }
                       items={cartData}
                       scopedColumns={{
-                        action: ({ size }: ICartData) => (
+                        remove: ({ size }: ICartData) => (
                           <td className="text-center">
                             {size && !Boolean(itemsWithAppliedPolices) ? (
                               <CIcon
@@ -297,6 +303,7 @@ const Checkout = () => {
                       sorterValue={{ column: 'name', state: 'asc' }}
                       tableProps={{
                         hover: true,
+                        responsive: true,
                       }}
                     />
 
@@ -309,14 +316,14 @@ const Checkout = () => {
                                 <p>
                                   {`Discounted price: `}
                                   <del className={`text-secondary`}>{`$${originalPrice.toFixed(2)}`}</del>
-                                  <span>{` $${itemsWithAppliedPolices.total.toFixed(2)}`}</span>
+                                  <span className={`text-success`}>{` $${itemsWithAppliedPolices.total.toFixed(2)}`}</span>
                                 </p>
                               ) : (
                                 ''
                               )}
                               <CButton className={`w-100`} onClick={() => setOrderPlaced(true)}>
                                 Pay
-                                <span className={`text-lead`}>{` $${itemsWithAppliedPolices.total.toFixed(2)}`}</span>
+                                <span className={`text-lead fw-bold`}>{` $${itemsWithAppliedPolices.total.toFixed(2)}`}</span>
                               </CButton>{' '}
                             </>
                           ) : (
