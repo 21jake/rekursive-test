@@ -12,7 +12,7 @@ const applyPolicies = async ({ body }: Request, res: Response) => {
     }
 
     const purchaseCount = items[size].purchaseCount;
-    if (!purchaseCount || purchaseCount < 1) {
+    if (purchaseCount < 0) {
       res.status(400).json({ success: false, err: 'Invalid purchase count' });
     }
     co.add(size as Size, purchaseCount);

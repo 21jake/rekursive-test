@@ -96,11 +96,5 @@ export const invalidCases: IApplyPoliciesBody[] = [
     items: {
       [Size.LARGE]: { purchaseCount: -1 },
     },
-  },
-  {
-    customerType: Customer.DEFAULT,
-    items: {
-      [Size.LARGE]: { purchaseCount: 0 },
-    },
-  },
+  }
 ];
