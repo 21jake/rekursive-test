@@ -11,8 +11,9 @@ import {
   CContainer,
   CImage,
   CRow,
-  CSmartTable
+  CSmartTable,
 } from '@coreui/react-pro';
+import autoAnimate from '@formkit/auto-animate';
 import { Formik } from 'formik';
 import { capitalize } from 'lodash';
 import React, { useEffect, useState } from 'react';
@@ -26,7 +27,7 @@ import { applyPolicies, getEntities } from './checkout.api';
 import { fetching } from './checkout.reducer';
 import ConfirmationDialog from './ConfirmationDialog';
 import CustomerPrompt from './CustomerPrompt';
-import { Customer, Size, TCartItems } from './typing';
+import { Customer, Size, TCartItems, TPizzas } from './typing';
 
 const columns = [
   {
@@ -42,26 +43,6 @@ const columns = [
   { key: 'total', _style: { width: '10%' } },
   { key: 'action', _style: { width: '10%' }, sorter: false, filter: false },
 ];
-const cartData = [
-  { id: 0, size: 'Small', description: '10" pizza for one person', price: '$11.99', amount: '2', total: '$20.99' },
-  { id: 1, size: 'Medium', description: '12" pizza for one person', price: '$11.99', amount: '2', total: '$420.99' },
-  { id: 2, size: 'Large', description: '10" pizza for one person', price: '$11.99', amount: '3', total: '$201.99' },
-  {
-    id: 3,
-    size: 'Total',
-    description: '',
-    price: '',
-    amount: '7',
-    total: '$1201.99',
-
-    _cellProps: {
-      total: { className: 'text-info fw-bold' },
-      amount: { className: 'text-info fw-bold' },
-      size: { className: 'text-info fw-bold' },
-    },
-  },
-];
-
 interface ICartData {
   size: Size | undefined;
   description: string | undefined;
@@ -92,6 +73,42 @@ const initialFormValues: IInitalFormValues = {
   },
 };
 
+const convertCartItemsToCartTableData = (items: TCartItems, products: TPizzas | undefined): ICartData[] => {
+  if (!products) return [];
+  const cartData: ICartData[] = Object.entries(items)
+    .map(([key, value]) => {
+      const { description, price } = products[key as Size];
+      return {
+        size: key as Size,
+        description,
+        price: price,
+        amount: value.purchaseCount,
+        total: value.purchaseCount * price,
+      };
+    })
+    .filter((e) => e.amount > 0);
+
+  if (!cartData.length) return [];
+
+  const totalAmount = cartData.reduce((acc, item) => acc + item.amount, 0);
+  const totalPrice = cartData.reduce((acc, item) => acc + item.total, 0);
+
+  cartData.push({
+    size: undefined,
+    description: undefined,
+    price: undefined,
+    amount: totalAmount,
+    total: totalPrice,
+    _cellProps: {
+      total: { className: 'text-info fw-bold' },
+      amount: { className: 'text-info fw-bold' },
+      size: { className: 'text-info fw-bold' },
+    },
+  });
+
+  return cartData;
+};
+
 const Checkout = () => {
   const {
     products,
@@ -100,63 +117,32 @@ const Checkout = () => {
     cartItems: itemsWithAppliedPolices,
   } = useSelector((state: RootState) => state.checkout);
 
-  const [orderPlaced, setOrderPlaced] = useState(false)
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
   const dispatch = useDispatch();
 
   useEffect(() => {
+    // Fetching products from server
     dispatch(fetching());
     dispatch(getEntities());
+
+    // Apply some basic animations
+    const tableBody = document.querySelectorAll('tbody');
+    tableBody.forEach((node) => {
+      autoAnimate(node);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const convertCartItemsToCartTableData = (items: TCartItems): ICartData[] => {
-    if (!products) return [];
-    const cartData: ICartData[] = Object.entries(items)
-      .map(([key, value]) => {
-        const { description, price } = products[key as Size];
-        return {
-          size: key as Size,
-          description,
-          price: price,
-          amount: value.purchaseCount,
-          total: value.purchaseCount * price,
-        };
-      })
-      .filter((e) => e.amount > 0);
-
-    if (!cartData.length) return [];
-
-    const totalAmount = cartData.reduce((acc, item) => acc + item.amount, 0);
-    const totalPrice = cartData.reduce((acc, item) => acc + item.total, 0);
-
-    cartData.push({
-      size: undefined,
-      description: undefined,
-      price: undefined,
-      amount: totalAmount,
-      total: totalPrice,
-      _cellProps: {
-        total: { className: 'text-info fw-bold' },
-        amount: { className: 'text-info fw-bold' },
-        size: { className: 'text-info fw-bold' },
-      },
-    });
-
-    return cartData;
-  };
-
-  useEffect(() => {
-    console.log(itemsWithAppliedPolices, 'itemsWithAppliedPolices');
-  }, [itemsWithAppliedPolices, 'itemsWithAppliedPolices']);
-
   return (
-    <CContainer className={`border border-danger py-5`}>
+    <CContainer className={`border py-5`}>
       <CustomerPrompt />
       <ConfirmationDialog visible={orderPlaced} />
+
       <CRow>
         <CCol xs={12} className={`d-flex justify-content-between`}>
           <p className={`lead`}>
-            Hello <span className="text-primary">{capitalize(customerType || "User")}</span> 🍕
+            Hello <span className="text-primary">{capitalize(customerType || 'User')}</span> 🍕
           </p>
         </CCol>
 
@@ -236,8 +222,8 @@ const Checkout = () => {
                       <CCol xs={6}>
                         <CButton
                           size="sm"
-                          color="primary"
-                          className={`float-end`}
+                          color="success"
+                          className={`float-end text-white`}
                           disabled={Boolean(!values.amount) || Boolean(itemsWithAppliedPolices)}
                           onClick={() => {
                             const { cartItems } = values;
@@ -259,11 +245,12 @@ const Checkout = () => {
                 </CCard>
               </CCol>
               {(function () {
-                const cartData = convertCartItemsToCartTableData(values.cartItems);
+                const cartData = convertCartItemsToCartTableData(values.cartItems, products);
                 const originalPrice = cartData.filter((e) => e.size).reduce((acc, item) => acc + item.total, 0);
                 return (
                   <CCol xs={7}>
                     <CSmartTable
+                      className="ahoy"
                       clickableRows
                       columns={columns}
                       columnFilter
@@ -271,7 +258,7 @@ const Checkout = () => {
                       noItemsLabel={
                         <CRow>
                           <CCol xs={12} className={`d-flex justify-content-center`}>
-                            <CImage src={pizzaImg4} height={100} />
+                            <CImage src={pizzaImg4} height={100} className={`constant-tilt-shake`} />
                           </CCol>
                           <CCol xs={12} className={`d-flex justify-content-center`}>
                             <p className={`lead mt-3`}>No items has been added to the cart yet.</p>
@@ -300,7 +287,11 @@ const Checkout = () => {
                           <td>{size ? capitalize(size) : <span className={'text-info fw-bold'}>Total</span>}</td>
                         ),
                         price: ({ price }: ICartData) => <td>{price ? `$${price.toFixed(2)}` : ''}</td>,
-                        total: ({ total }: ICartData) => <td>{total ? `$${total.toFixed(2)}` : ''}</td>,
+                        total: ({ total, size }: ICartData) => (
+                          <td className={`${!size ? 'text-info fw-bold' : ''}`}>
+                            {total ? `$${total.toFixed(2)}` : ''}
+                          </td>
+                        ),
                         description: ({ description }: ICartData) => <td>{description || ''}</td>,
                       }}
                       sorterValue={{ column: 'name', state: 'asc' }}
@@ -329,7 +320,7 @@ const Checkout = () => {
                               </CButton>{' '}
                             </>
                           ) : (
-                            <CButton className={`w-100`} disabled={loading} onClick={(submitForm)}>
+                            <CButton className={`w-100`} disabled={loading} onClick={submitForm}>
                               <span>Proceed to checkout</span>
                             </CButton>
                           )}
