@@ -7,7 +7,7 @@ import cors from 'cors'
 dotenv.config();
 
 const app: Express = express();
-const port = process.env.PORT;
+const port = process.env.PORT || 5000;
 
 app.use(express.json());
 
@@ -30,9 +30,12 @@ app.use(`${prefix}/checkout`, checkoutRouter);
 // UNHANDLED ROUTES
 app.all(`*`, (req, res, next) => {
   const err = `Can not find ${req.originalUrl}`;
-  next(err);
+  res.status(404).json({ success: false, err });
+  // next({err, status: 404});
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Server is running at port ${port}`);
 });
+
+export default server

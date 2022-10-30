@@ -7,8 +7,16 @@ const applyPolicies = async ({ body }: Request, res: Response) => {
   const co = new Checkout(customerType);
 
   Object.keys(items).forEach((size) => {
-    co.add(size as Size, items[size].purchaseCount);
-  })
+    if (!(size in Size)) {
+      res.status(400).json({ success: false, err: 'Invalid size' });
+    }
+
+    const purchaseCount = items[size].purchaseCount;
+    if (!purchaseCount || purchaseCount < 1) {
+      res.status(400).json({ success: false, err: 'Invalid purchase count' });
+    }
+    co.add(size as Size, purchaseCount);
+  });
 
   const { cart, total } = co.total();
   res.status(200).json({ success: true, data: { cart, total } });

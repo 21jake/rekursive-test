@@ -17,3 +17,9 @@ export enum Customer {
 
 export type PricingRulesFn = (items: TCartItems) => TCartItems;
 export type CustomerRules = { [key in Customer]: PricingRulesFn[] };
+
+export interface IApplyPoliciesBody {
+  customerType: Customer;
+  items: {[key: string]: { purchaseCount: number }};
+  expectedTotal?: number
+}
