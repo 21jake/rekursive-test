@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+  server:
+    image: server:2.0
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    environment:
+      - "PORT=5005"
+    ports:
+      - "5005:5005"
+
+  client:
+    image: client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
